@@ -1,148 +1,298 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Kids Bank</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kids Bank (Cloud)</title>
 <style>
-body{font-family:sans-serif;margin:0;padding:1rem;max-width:480px;margin:auto;background:#f8f8f8;}
-.hidden{display:none;}
-header{display:flex;justify-content:center;margin-bottom:1rem;}
-input,select,button{font-size:1rem;padding:0.5rem;margin:0.25rem 0;width:100%;box-sizing:border-box;}
-button{cursor:pointer;background:#4caf50;color:#fff;border:none;border-radius:4px;}
-button:hover{opacity:0.9;}
-.card{background:#fff;border-radius:8px;padding:1rem;margin-bottom:1rem;box-shadow:0 2px 4px rgba(0,0,0,0.1);}
-.balance{font-size:2rem;font-weight:bold;text-align:center;margin:0.5rem 0;}
-.txn{display:flex;justify-content:space-between;padding:0.25rem 0;border-bottom:1px solid #eee;}
-.txn:last-child{border-bottom:none;}
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 1rem;
+  max-width: 480px;
+  margin: auto;
+  background: #f8f8f8;
+}
+.hidden {
+  display: none;
+}
+header {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+input,
+select,
+button {
+  font-size: 1rem;
+  padding: 0.5rem;
+  margin: 0.25rem 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+button {
+  cursor: pointer;
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+}
+button:hover {
+  opacity: 0.9;
+}
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.balance {
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  margin: 0.5rem 0;
+}
+.txn {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #eee;
+}
+.txn:last-child {
+  border-bottom: none;
+}
+.quick-login {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 1rem;
+}
+.quick-login button {
+  width: auto;
+  padding: 0.5rem 1rem;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+}
+.quick-parent {
+  background: black;
+}
+.quick-abdullah {
+  background: blue;
+}
+.quick-musab {
+  background: green;
+}
 </style>
 </head>
 <body>
-
-<header><h2>Kids Bank</h2></header>
-
-<div id="login" class="card">
-  <h3>Login</h3>
-  <input id="username" placeholder="Username"/>
-  <input id="password" type="password" placeholder="Password"/>
-  <button id="loginBtn">Login</button>
-  <p id="loginErr" style="color:red;"></p>
-</div>
-
-<div id="parentPanel" class="hidden">
-  <div class="card">
-    <h3>Give Money</h3>
-    <select id="childSelect"></select>
-    <input id="reason" placeholder="Reason"/>
-    <input id="amount" type="number" placeholder="Amount"/>
-    <button id="giveBtn">Send</button>
+  <header><h2>Kids Bank</h2></header>
+  <div id="login" class="card">
+    <h3>Login</h3>
+    <input id="username" placeholder="Username" />
+    <input id="password" type="password" placeholder="Password" />
+    <button id="loginBtn">Login</button>
+    <p id="loginErr" style="color: red"></p>
+    <div class="quick-login">
+      <button class="quick-parent" onclick="quickLogin('parent', 'admin')">Parent</button>
+      <button class="quick-abdullah" onclick="quickLogin('abdullah', '1234')">Abdullah</button>
+      <button class="quick-musab" onclick="quickLogin('musab', '1234')">Musab</button>
+    </div>
   </div>
-  <div id="parentBalances" class="card">
-    <!-- balances will render here -->
+
+  <div id="parentPanel" class="hidden">
+    <div class="card">
+      <h3>Give Money / Deduct</h3>
+      <select id="childSelect"></select>
+      <select id="txnType">
+        <option value="credit">Credit</option>
+        <option value="debit">Debit</option>
+      </select>
+      <input id="reason" placeholder="Reason" />
+      <input id="amount" type="number" placeholder="Amount" />
+      <button id="giveBtn">Send</button>
+    </div>
+    <div id="parentBalances" class="card"></div>
   </div>
-</div>
 
-<div id="childPanel" class="hidden">
-  <div class="card">
-    <h3>Hello, <span id="childName"></span></h3>
-    <div class="balance" id="childBalance">0</div>
+  <div id="childPanel" class="hidden">
+    <div class="card">
+      <h3>Hello, <span id="childName"></span></h3>
+      <div class="balance" id="childBalance">0</div>
+    </div>
+    <div class="card">
+      <h3>Transactions</h3>
+      <div id="childTxns"></div>
+    </div>
   </div>
-  <div class="card">
-    <h3>Transactions</h3>
-    <div id="childTxns"></div>
-  </div>
-</div>
 
-<script>
-const STORAGE_KEY='kidsBankData';
-const defaultData={
-  users:{
-    abdullah:{password:'1234',role:'child'},
-    musab:{password:'1234',role:'child'},
-    parent:{password:'admin',role:'parent'}
-  },
-  accounts:{
-    abdullah:{balance:0,transactions:[]},
-    musab:{balance:0,transactions:[]}
-  }
-};
-function loadData(){
-  const d=localStorage.getItem(STORAGE_KEY);
-  if(!d){localStorage.setItem(STORAGE_KEY,JSON.stringify(defaultData));return structuredClone(defaultData);} 
-  try{return JSON.parse(d);}catch(e){localStorage.setItem(STORAGE_KEY,JSON.stringify(defaultData));return structuredClone(defaultData);} 
-}
-function saveData(data){localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}
-let data=loadData();
-let currentUser=null;
+  <script>
+    /* ======== CONFIGURE YOUR JSONBIN.IO DETAILS HERE ======== */
+    const BIN_ID = "687bd846480911522001db09"; // 🔴 replace with your bin ID
+    const API_KEY = "$2a$10$xcf960ZHIYlWyWFGWqu15Osv.zaYf23iItcX7EODdz/PnCHcrLB02"; // 🔴 replace with your X-Master-Key
+    /* ======================================================== */
 
-const loginBtn=document.getElementById('loginBtn');
-const loginErr=document.getElementById('loginErr');
-loginBtn.onclick=()=>{
-  const u=document.getElementById('username').value.trim().toLowerCase();
-  const p=document.getElementById('password').value.trim();
-  if(data.users[u]&&data.users[u].password===p){
-    currentUser=u;
-    document.getElementById('login').classList.add('hidden');
-    if(data.users[u].role==='parent'){showParent();}
-    else{showChild();}
-  }else{loginErr.textContent='Invalid credentials';}
-};
+    const BASE_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+    const defaultData = {
+      users: {
+        abdullah: { password: "1234", role: "child" },
+        musab: { password: "1234", role: "child" },
+        parent: { password: "admin", role: "parent" },
+      },
+      accounts: {
+        abdullah: { balance: 0, transactions: [] },
+        musab: { balance: 0, transactions: [] },
+      },
+    };
 
-function showParent(){
-  const panel=document.getElementById('parentPanel');
-  panel.classList.remove('hidden');
-  const sel=document.getElementById('childSelect');
-  sel.innerHTML='';
-  for(const child of Object.keys(data.accounts)){
-    const opt=document.createElement('option');
-    opt.value=child;opt.textContent=child;
-    sel.appendChild(opt);
-  }
-  document.getElementById('giveBtn').onclick=()=>{
-    const child=sel.value;
-    const reason=document.getElementById('reason').value.trim();
-    const amt=parseFloat(document.getElementById('amount').value);
-    if(!child||!reason||isNaN(amt)){alert('Fill all fields');return;}
-    data.accounts[child].balance+=amt;
-    data.accounts[child].transactions.unshift({reason,amt,date:new Date().toLocaleString()});
-    saveData(data);
-    document.getElementById('reason').value='';
-    document.getElementById('amount').value='';
-    renderParentBalances();
-  };
-  renderParentBalances();
-}
-function renderParentBalances(){
-  const container=document.getElementById('parentBalances');
-  container.innerHTML='<h3>Balances</h3>';
-  for(const [child,acc] of Object.entries(data.accounts)){
-    const div=document.createElement('div');
-    div.className='txn';
-    div.innerHTML=`<span>${child}</span><span>${acc.balance.toFixed(2)}</span>`;
-    container.appendChild(div);
-  }
-}
+    let data = null;
+    let currentUser = null;
 
-function showChild(){
-  const panel=document.getElementById('childPanel');
-  panel.classList.remove('hidden');
-  document.getElementById('childName').textContent=currentUser;
-  renderChild();
-}
-function renderChild(){
-  const acc=data.accounts[currentUser];
-  document.getElementById('childBalance').textContent=acc.balance.toFixed(2);
-  const list=document.getElementById('childTxns');
-  list.innerHTML='';
-  if(acc.transactions.length===0){list.textContent='No transactions yet.';return;}
-  for(const t of acc.transactions){
-    const div=document.createElement('div');
-    div.className='txn';
-    div.innerHTML=`<span>${t.date.split(',')[0]}</span><span>${t.reason}</span><span>${t.amt.toFixed(2)}</span>`;
-    list.appendChild(div);
-  }
-}
-</script>
+    // ---------- Cloud Persistence Helpers ---------- //
+    async function loadData() {
+      try {
+        const res = await fetch(`${BASE_URL}/latest`, {
+          headers: { "X-Master-Key": API_KEY },
+        });
+        if (!res.ok) throw new Error("Bin not found");
+        const json = await res.json();
+        return json.record;
+      } catch (err) {
+        // If first run or error, initialize remote bin
+        await saveData(defaultData);
+        return structuredClone(defaultData);
+      }
+    }
 
+    async function saveData(newData) {
+      // ensure ONLY last 20 txns per child
+      for (const acc of Object.values(newData.accounts)) {
+        acc.transactions = acc.transactions.slice(0, 20);
+      }
+      await fetch(`${BASE_URL}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": API_KEY,
+        },
+        body: JSON.stringify(newData),
+      });
+    }
+
+    // ---------- UI Logic ---------- //
+    window.addEventListener("DOMContentLoaded", init);
+
+    async function init() {
+      data = await loadData();
+
+      // Set up event handlers after data is ready
+      document.getElementById("loginBtn").onclick = handleLoginClick;
+      renderChildOptions();
+    }
+
+    function handleLoginClick() {
+      const u = document.getElementById("username").value.trim().toLowerCase();
+      const p = document.getElementById("password").value.trim();
+      authenticate(u, p);
+    }
+
+    function quickLogin(u, p) {
+      document.getElementById("username").value = u;
+      document.getElementById("password").value = p;
+      authenticate(u, p);
+    }
+
+    function authenticate(u, p) {
+      const loginErr = document.getElementById("loginErr");
+      if (data.users[u] && data.users[u].password === p) {
+        currentUser = u;
+        document.getElementById("login").classList.add("hidden");
+        if (data.users[u].role === "parent") showParent();
+        else showChild();
+      } else {
+        loginErr.textContent = "Invalid credentials";
+      }
+    }
+
+    // ---------- Parent View ---------- //
+    function renderChildOptions() {
+      const sel = document.getElementById("childSelect");
+      sel.innerHTML = "";
+      for (const child of Object.keys(defaultData.accounts)) {
+        const opt = document.createElement("option");
+        opt.value = child;
+        opt.textContent = child;
+        sel.appendChild(opt);
+      }
+    }
+
+    function showParent() {
+      const panel = document.getElementById("parentPanel");
+      panel.classList.remove("hidden");
+
+      document.getElementById("giveBtn").onclick = async () => {
+        const child = document.getElementById("childSelect").value;
+        const reason = document.getElementById("reason").value.trim();
+        const amt = parseFloat(document.getElementById("amount").value);
+        const type = document.getElementById("txnType").value;
+        if (!child || !reason || isNaN(amt)) {
+          alert("Fill all fields");
+          return;
+        }
+        const signedAmt = type === "debit" ? -amt : amt;
+        const txn = {
+          reason,
+          amt: signedAmt,
+          date: new Date().toLocaleString(),
+        };
+        const acc = data.accounts[child];
+        acc.balance += signedAmt;
+        acc.transactions.unshift(txn);
+        acc.transactions = acc.transactions.slice(0, 20);
+        await saveData(data);
+        document.getElementById("reason").value = "";
+        document.getElementById("amount").value = "";
+        renderParentBalances();
+      };
+      renderParentBalances();
+    }
+
+    function renderParentBalances() {
+      const container = document.getElementById("parentBalances");
+      container.innerHTML = "<h3>Balances</h3>";
+      for (const [child, acc] of Object.entries(data.accounts)) {
+        const div = document.createElement("div");
+        div.className = "txn";
+        div.innerHTML = `<span>${child}</span><span>${acc.balance.toFixed(2)}</span>`;
+        container.appendChild(div);
+      }
+    }
+
+    // ---------- Child View ---------- //
+    function showChild() {
+      document.getElementById("childPanel").classList.remove("hidden");
+      document.getElementById("childName").textContent = currentUser;
+      renderChild();
+    }
+
+    function renderChild() {
+      const acc = data.accounts[currentUser];
+      document.getElementById("childBalance").textContent = acc.balance.toFixed(2);
+      const list = document.getElementById("childTxns");
+      list.innerHTML = "";
+      if (acc.transactions.length === 0) {
+        list.textContent = "No transactions yet.";
+        return;
+      }
+      for (const t of acc.transactions) {
+        const div = document.createElement("div");
+        div.className = "txn";
+        const sign = t.amt >= 0 ? "+" : "-";
+        div.innerHTML = `<span>${t.date.split(",")[0]}</span><span>${t.reason}</span><span>${sign}${Math.abs(t.amt).toFixed(2)}</span>`;
+        list.appendChild(div);
+      }
+    }
+  </script>
 </body>
 </html>

@@ -153,31 +153,46 @@ button:hover {
     async function loadData() {
       try {
         const res = await fetch(`${BASE_URL}/latest`, {
-          headers: { "X-Master-Key": API_KEY },
+          headers: { "X-Master-Key": API_KEY, "X-Bin-Meta": false },
         });
         if (!res.ok) throw new Error("Bin not found");
         const json = await res.json();
         return json.record;
       } catch (err) {
         // If first run or error, initialize remote bin
-        await saveData(defaultData);
+        await createBin(defaultData);
         return structuredClone(defaultData);
       }
     }
 
-    async function saveData(newData) {
-      // ensure ONLY last 20 txns per child
-      for (const acc of Object.values(newData.accounts)) {
-        acc.transactions = acc.transactions.slice(0, 20);
-      }
+    async function createBin(initialData) {
       await fetch(`${BASE_URL}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           "X-Master-Key": API_KEY,
         },
-        body: JSON.stringify(newData),
+        body: JSON.stringify({ record: initialData }),
       });
+    }
+
+    async function saveData(newData) {
+      // keep ONLY last 20 transactions per child
+      for (const acc of Object.values(newData.accounts)) {
+        acc.transactions = acc.transactions.slice(0, 20);
+      }
+      const res = await fetch(`${BASE_URL}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": API_KEY,
+        },
+        body: JSON.stringify({ record: newData }),
+      });
+      if (!res.ok) {
+        console.error("Save failed", await res.text());
+        alert("Could not save to cloud. Check console for details.");
+      }
     }
 
     // ---------- UI Logic ---------- //
@@ -219,7 +234,7 @@ button:hover {
     function renderChildOptions() {
       const sel = document.getElementById("childSelect");
       sel.innerHTML = "";
-      for (const child of Object.keys(defaultData.accounts)) {
+      for (const child of Object.keys(data.accounts)) {
         const opt = document.createElement("option");
         opt.value = child;
         opt.textContent = child;
@@ -232,67 +247,4 @@ button:hover {
       panel.classList.remove("hidden");
 
       document.getElementById("giveBtn").onclick = async () => {
-        const child = document.getElementById("childSelect").value;
-        const reason = document.getElementById("reason").value.trim();
-        const amt = parseFloat(document.getElementById("amount").value);
-        const type = document.getElementById("txnType").value;
-        if (!child || !reason || isNaN(amt)) {
-          alert("Fill all fields");
-          return;
-        }
-        const signedAmt = type === "debit" ? -amt : amt;
-        const txn = {
-          reason,
-          amt: signedAmt,
-          date: new Date().toLocaleString(),
-        };
-        const acc = data.accounts[child];
-        acc.balance += signedAmt;
-        acc.transactions.unshift(txn);
-        acc.transactions = acc.transactions.slice(0, 20);
-        await saveData(data);
-        document.getElementById("reason").value = "";
-        document.getElementById("amount").value = "";
-        renderParentBalances();
-      };
-      renderParentBalances();
-    }
-
-    function renderParentBalances() {
-      const container = document.getElementById("parentBalances");
-      container.innerHTML = "<h3>Balances</h3>";
-      for (const [child, acc] of Object.entries(data.accounts)) {
-        const div = document.createElement("div");
-        div.className = "txn";
-        div.innerHTML = `<span>${child}</span><span>${acc.balance.toFixed(2)}</span>`;
-        container.appendChild(div);
-      }
-    }
-
-    // ---------- Child View ---------- //
-    function showChild() {
-      document.getElementById("childPanel").classList.remove("hidden");
-      document.getElementById("childName").textContent = currentUser;
-      renderChild();
-    }
-
-    function renderChild() {
-      const acc = data.accounts[currentUser];
-      document.getElementById("childBalance").textContent = acc.balance.toFixed(2);
-      const list = document.getElementById("childTxns");
-      list.innerHTML = "";
-      if (acc.transactions.length === 0) {
-        list.textContent = "No transactions yet.";
-        return;
-      }
-      for (const t of acc.transactions) {
-        const div = document.createElement("div");
-        div.className = "txn";
-        const sign = t.amt >= 0 ? "+" : "-";
-        div.innerHTML = `<span>${t.date.split(",")[0]}</span><span>${t.reason}</span><span>${sign}${Math.abs(t.amt).toFixed(2)}</span>`;
-        list.appendChild(div);
-      }
-    }
-  </script>
-</body>
-</html>
+        const child = document

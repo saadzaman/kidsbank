@@ -76,6 +76,8 @@ const defaultData = {
 };
 let data = null;
 let currentUser = null;
+let dataReadyResolve;
+const dataReady = new Promise(res=>dataReadyResolve=res);
 
 // ========= Cloud Persistence ========= //
 async function loadData(){
@@ -83,7 +85,6 @@ async function loadData(){
     const res = await fetch(READ_URL,{ headers:{ 'X-Master-Key':API_KEY, 'X-Bin-Meta':'false' } });
     if(!res.ok) throw new Error('bin missing');
     const record = await res.json();
-    // when X-Bin-Meta:false -> raw record, otherwise {record:...}
     return record.record ?? record;
   }catch(err){
     console.warn('Initial load failed, creating bin...', err.message);
@@ -92,7 +93,6 @@ async function loadData(){
   }
 }
 async function saveData(newData){
-  // keep only 20 txns per child
   Object.values(newData.accounts).forEach(acc=>{acc.transactions = acc.transactions.slice(0,20);});
   const res = await fetch(BASE_URL,{
     method:'PUT',
@@ -109,10 +109,12 @@ async function saveData(newData){
 // ========= UI Logic ========= //
 window.addEventListener('DOMContentLoaded', async ()=>{
   data = await loadData();
+  populateChildSelect();
+  // enable quick-login buttons (they were active anyway but now safe)
+  dataReadyResolve();
   // Event listeners
   document.getElementById('loginBtn').addEventListener('click', handleLoginClick);
   document.getElementById('giveBtn').addEventListener('click', handleGive);
-  populateChildSelect();
 });
 
 function handleLoginClick(){
@@ -121,11 +123,15 @@ function handleLoginClick(){
   authenticate(u,p);
 }
 // Make quickLogin globally accessible
-function quickLogin(u,p){ authenticate(u,p); }
+async function quickLogin(u,p){
+  await dataReady; // ensure data loaded
+  authenticate(u,p);
+}
 window.quickLogin = quickLogin;
 
 function authenticate(u,p){
   const loginErr = document.getElementById('loginErr');
+  if(!data){ loginErr.textContent='Loading...'; return; }
   if(data.users[u] && data.users[u].password===p){
     currentUser=u;
     document.getElementById('login').classList.add('hidden');
@@ -164,7 +170,7 @@ async function handleGive(){
   document.getElementById('reason').value='';
   document.getElementById('amount').value='';
   renderParentBalances();
-  if(child===currentUser) renderChild(); // if parent acting as its own child session (unlikely)
+  if(child===currentUser) renderChild();
 }
 function renderParentBalances(){
   const container = document.getElementById('parentBalances');

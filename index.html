@@ -5,22 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kids Bank (Cloud)</title>
   <style>
-    body {font-family:sans-serif;margin:0;padding:1rem;max-width:480px;margin:auto;background:#f8f8f8}
-    .hidden {display:none}
-    header {display:flex;justify-content:center;margin-bottom:1rem}
-    input,select,button {font-size:1rem;padding:0.5rem;margin:0.25rem 0;width:100%;box-sizing:border-box}
-    button {cursor:pointer;background:#4caf50;color:#fff;border:none;border-radius:4px}
-    button:hover {opacity:0.9}
-    .card {background:#fff;border-radius:8px;padding:1rem;margin-bottom:1rem;box-shadow:0 2px 4px rgba(0,0,0,.1)}
-    .balance {font-size:2rem;font-weight:bold;text-align:center;margin:0.5rem 0}
-    .txn {display:flex;justify-content:space-between;padding:0.25rem 0;border-bottom:1px solid #eee}
-    .txn:last-child {border-bottom:none}
-    .quick-login {display:flex;justify-content:space-around;margin-top:1rem}
-    .quick-login button {width:auto;padding:0.5rem 1rem;color:#fff;border:none;border-radius:4px;font-weight:bold}
-    .quick-abdullah {background:blue}
-    .quick-musab {background:green}
-    .top-actions {display:flex;justify-content:flex-end;gap:0.5rem;margin-bottom:0.5rem}
-    .link-btn {background:#2196f3}
+    body{font-family:sans-serif;margin:0;padding:1rem;max-width:480px;margin:auto;background:#f8f8f8}
+    .hidden{display:none}
+    header{display:flex;justify-content:center;margin-bottom:1rem}
+    input,select,button{font-size:1rem;padding:0.5rem;margin:0.25rem 0;width:100%;box-sizing:border-box}
+    button{cursor:pointer;background:#4caf50;color:#fff;border:none;border-radius:4px}
+    button:hover{opacity:0.9}
+    .card{background:#fff;border-radius:8px;padding:1rem;margin-bottom:1rem;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+    .balance{font-size:2rem;font-weight:bold;text-align:center;margin:0.5rem 0}
+    .txn{display:flex;justify-content:space-between;padding:0.25rem 0;border-bottom:1px solid #eee}
+    .txn:last-child{border-bottom:none}
+    .quick-login{display:flex;justify-content:space-around;margin-top:1rem}
+    .quick-login button{width:auto;padding:0.5rem 1rem;color:#fff;border:none;border-radius:4px;font-weight:bold}
+    .quick-abdullah{background:blue}
+    .quick-musab{background:green}
+    .top-actions{display:flex;justify-content:flex-end;gap:0.5rem;margin-bottom:0.5rem}
+    .link-btn{background:#2196f3}
   </style>
 </head>
 <body>
@@ -32,8 +32,6 @@
     <input id="password" type="password" placeholder="Password"/>
     <button id="loginBtn">Login</button>
     <p id="loginErr" style="color:red"></p>
-
-    <!-- quick‑login child buttons (parent shortcut removed) -->
     <div class="quick-login">
       <button id="btnAbdullah" class="quick-abdullah">Abdullah</button>
       <button id="btnMusab" class="quick-musab">Musab</button>
@@ -59,186 +57,131 @@
     <div class="card"><h3>Transactions</h3><div id="childTxns"></div></div>
   </div>
 
-  <script>
-    /* ============== CONFIG ================= */
-    const BIN_ID   = 'YOUR_BIN_ID_HERE';      // <-- replace
-    const API_KEY  = 'YOUR_API_KEY_HERE';     // <-- replace (master key)
-    const BASE_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-    const LAST_USER_KEY = 'kidsBankLastUser';
+<script>
+/*************************** CONFIG *********************************/
+const BIN_ID  = 'YOUR_BIN_ID_HERE';  // <-- replace
+const API_KEY = 'YOUR_API_KEY_HERE'; // <-- replace (master key)
+const BASE_URL      = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+const LAST_USER_KEY = 'kidsBankLastUser';
 
-    /* ============== DEFAULT DATA ============ */
-    const defaultData = {
-      users: {
-        abdullah: { password: '1234', role: 'child' },
-        musab:    { password: '1234', role: 'child' },
-        parent:   { password: 'admin', role: 'parent' }
-      },
-      accounts: {
-        abdullah: { balance: 0, transactions: [] },
-        musab:    { balance: 0, transactions: [] }
-      }
-    };
+/************************ DEFAULT DATA ******************************/
+const defaultData = {
+  users: {
+    abdullah: { password: '1234', role: 'child' },
+    musab:    { password: '1234', role: 'child' },
+    parent:   { password: 'admin', role: 'parent' }
+  },
+  accounts: {
+    abdullah: { balance: 0, transactions: [] },
+    musab:    { balance: 0, transactions: [] }
+  }
+};
 
-    /* ============== HELPERS ================= */
-    const headers = { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY };
+/************************* HELPERS *********************************/
+const headers = { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY };
 
-    async function loadData() {
-      try {
-        const r = await fetch(`${BASE_URL}/latest`, { headers });
-        if (r.status === 404) {
-          // create bin first time
-          await fetch(BASE_URL, { method: 'POST', headers, body: JSON.stringify({ record: defaultData }) });
-          return structuredClone(defaultData);
-        }
-        const j = await r.json();
-        return j.record || j; // depending on meta header
-      } catch (e) {
-        console.error('loadData error', e);
-        return structuredClone(defaultData);
-      }
+async function loadData() {
+  try {
+    const r = await fetch(`${BASE_URL}/latest`, { headers });
+    if (r.status === 404) {
+      await fetch(BASE_URL, { method: 'POST', headers, body: JSON.stringify({ record: defaultData }) });
+      return structuredClone(defaultData);
     }
+    const j = await r.json();
+    return j.record || j;
+  } catch (e) {
+    console.error('loadData error', e);
+    return structuredClone(defaultData);
+  }
+}
 
-    async function saveData(newData) {
-      // keep only last 20 txns
-      for (const acc of Object.values(newData.accounts)) {
-        acc.transactions = (acc.transactions || []).slice(0, 20);
-      }
-      const res = await fetch(BASE_URL, { method: 'PUT', headers, body: JSON.stringify({ record: newData }) });
-      if (!res.ok) {
-        const txt = await res.text();
-        alert('Save failed! ' + res.status + ' ' + txt);
-        throw new Error(txt);
-      }
-    }
+async function saveData(newData) {
+  for (const acc of Object.values(newData.accounts)) acc.transactions = (acc.transactions||[]).slice(0,20);
+  const res = await fetch(BASE_URL, { method: 'PUT', headers, body: JSON.stringify({ record: newData }) });
+  if (!res.ok) { const txt = await res.text(); alert('Save failed '+res.status); throw new Error(txt);}  
+}
 
-    function setLastUser(u)  { localStorage.setItem(LAST_USER_KEY, u); }
-    function clearLastUser()  { localStorage.removeItem(LAST_USER_KEY); }
+function setLastUser(u){ localStorage.setItem(LAST_USER_KEY,u);}  
+function clearLastUser(){ localStorage.removeItem(LAST_USER_KEY);}  
 
-    /* ============== APP STATE =============== */
-    let data, currentUser;
-    const dataReady = loadData().then(d => { data = d; populateChildSelect(); attemptAutoLogin(); });
+/************************* STATE ***********************************/
+let data, currentUser;
+const dataReady = loadData().then(d=>{ data=d; populateChildSelect(); attemptAutoLogin(); });
 
-    /* ============== UI ELEMENTS ============= */
-    const loginDiv      = document.getElementById('login');
-    const usernameInput = document.getElementById('username');
-    const passwordInput = document.getElementById('password');
-    const loginErrP     = document.getElementById('loginErr');
+/************************* UI GRAB *********************************/
+const loginDiv=document.getElementById('login');
+const usernameInput=document.getElementById('username');
+const passwordInput=document.getElementById('password');
+const loginErrP=document.getElementById('loginErr');
+const parentPanel=document.getElementById('parentPanel');
+const childPanel=document.getElementById('childPanel');
 
-    const parentPanel   = document.getElementById('parentPanel');
-    const childPanel    = document.getElementById('childPanel');
+/************************* AUTH ************************************/
+function authenticate(u,p){
+  if(!data || !data.users || !data.users[u] || data.users[u].password!==p){ loginErrP.textContent='Invalid credentials'; return; }
+  currentUser=u; setLastUser(u); loginDiv.classList.add('hidden');
+  (data.users[u].role==='parent')?showParent():showChild();
+}
 
-    /* ============== AUTH ==================== */
-    function authenticate(u, p) {
-      if (!data.users[u] || data.users[u].password !== p) {
-        loginErrP.textContent = 'Invalid credentials';
-        return;
-      }
-      currentUser = u;
-      setLastUser(u);
-      loginDiv.classList.add('hidden');
-      (data.users[u].role === 'parent') ? showParent() : showChild();
-    }
+async function attemptAutoLogin(){
+  const last=localStorage.getItem(LAST_USER_KEY);
+  if(last){ await dataReady; if(data.users[last]) authenticate(last,data.users[last].password); }
+}
 
-    async function attemptAutoLogin() {
-      const last = localStorage.getItem(LAST_USER_KEY);
-      if (last && data.users[last]) authenticate(last, data.users[last].password);
-    }
+/************************* PARENT **********************************/
+const childSelect=document.getElementById('childSelect');
+const txnTypeSel=document.getElementById('txnType');
+const reasonInput=document.getElementById('reason');
+const amountInput=document.getElementById('amount');
+const parentBalDiv=document.getElementById('parentBalances');
 
-    /* ============== PARENT VIEW ============= */
-    const childSelect   = document.getElementById('childSelect');
-    const txnTypeSel    = document.getElementById('txnType');
-    const reasonInput   = document.getElementById('reason');
-    const amountInput   = document.getElementById('amount');
-    const parentBalDiv  = document.getElementById('parentBalances');
+function populateChildSelect(){
+  if(!childSelect) return;
+  childSelect.innerHTML='';
+  if(!data) return;
+  for(const c of Object.keys(data.accounts)){
+    const o=document.createElement('option'); o.value=c; o.textContent=c; childSelect.appendChild(o);
+  }
+}
 
-    function populateChildSelect() {
-      childSelect.innerHTML = '';
-      for (const c of Object.keys(defaultData.accounts)) {
-        const o = document.createElement('option');
-        o.value = c; o.textContent = c; childSelect.appendChild(o);
-      }
-    }
+async function handleGive(){
+  const child=childSelect.value; const amt=parseFloat(amountInput.value); const reason=reasonInput.value.trim();
+  if(!child||isNaN(amt)||!reason){alert('Fill all fields'); return;}
+  const signed=(txnTypeSel.value==='debit'?-amt:amt);
+  const txn={reason,amt:signed,date:new Date().toLocaleString()};
+  data.accounts[child].balance+=signed; data.accounts[child].transactions.unshift(txn);
+  await saveData(data);
+  renderParentBalances(); reasonInput.value=''; amountInput.value='';
+}
 
-    async function handleGive() {
-      const child = childSelect.value;
-      const amt   = parseFloat(amountInput.value);
-      const reason= reasonInput.value.trim();
-      if (!child || isNaN(amt) || !reason) { alert('Fill all fields'); return; }
-      const signed = (txnTypeSel.value === 'debit') ? -amt : amt;
-      const txn = { reason, amt: signed, date: new Date().toLocaleString() };
-      const acc = data.accounts[child];
-      acc.balance += signed;
-      acc.transactions.unshift(txn);
-      await saveData(data);
-      renderParentBalances();
-      reasonInput.value = ''; amountInput.value = '';
-    }
+function renderParentBalances(){
+  parentBalDiv.innerHTML='<h3>Balances</h3>';
+  for(const [c,acc] of Object.entries(data.accounts)){
+    const d=document.createElement('div'); d.className='txn';
+    d.innerHTML=`<span>${c}</span><span>${acc.balance.toFixed(2)}</span>`; parentBalDiv.appendChild(d);
+  }
+}
+function showParent(){ parentPanel.classList.remove('hidden'); renderParentBalances(); }
 
-    function renderParentBalances() {
-      parentBalDiv.innerHTML = '<h3>Balances</h3>';
-      for (const [c, acc] of Object.entries(data.accounts)) {
-        const d = document.createElement('div');
-        d.className = 'txn';
-        d.innerHTML = `<span>${c}</span><span>${acc.balance.toFixed(2)}</span>`;
-        parentBalDiv.appendChild(d);
-      }
-    }
+/************************* CHILD ***********************************/
+const childNameSpan=document.getElementById('childName');
+const childBalDiv=document.getElementById('childBalance');
+const childTxnsDiv=document.getElementById('childTxns');
 
-    function showParent() {
-      parentPanel.classList.remove('hidden');
-      renderParentBalances();
-    }
+function renderChild(){
+  const acc=data.accounts[currentUser];
+  childNameSpan.textContent=currentUser; childBalDiv.textContent=acc.balance.toFixed(2); childTxnsDiv.innerHTML='';
+  if(!acc.transactions.length){ childTxnsDiv.textContent='No transactions yet.'; return; }
+  for(const t of acc.transactions){ const d=document.createElement('div'); d.className='txn'; const sign=t.amt>=0?'+':'-';
+    d.innerHTML=`<span>${t.date.split(',')[0]}</span><span>${t.reason}</span><span>${sign}${Math.abs(t.amt).toFixed(2)}</span>`;
+    childTxnsDiv.appendChild(d); }
+}
+function showChild(){ childPanel.classList.remove('hidden'); renderChild(); }
 
-    /* ============== CHILD VIEW ============== */
-    const childNameSpan = document.getElementById('childName');
-    const childBalDiv   = document.getElementById('childBalance');
-    const childTxnsDiv  = document.getElementById('childTxns');
+/************************ LOGOUT/SWITCH ****************************/
+function logout(){ clearLastUser(); currentUser=null; parentPanel.classList.add('hidden'); childPanel.classList.add('hidden'); loginDiv.classList.remove('hidden'); }
+function switchChild(){ logout(); usernameInput.value=''; passwordInput.value=''; usernameInput.focus(); }
 
-    function renderChild() {
-      const acc = data.accounts[currentUser];
-      childNameSpan.textContent = currentUser;
-      childBalDiv.textContent   = acc.balance.toFixed(2);
-      childTxnsDiv.innerHTML = '';
-      if (!acc.transactions.length) { childTxnsDiv.textContent = 'No transactions yet.'; return; }
-      for (const t of acc.transactions) {
-        const d = document.createElement('div');
-        d.className = 'txn';
-        const sign = t.amt >= 0 ? '+' : '-';
-        d.innerHTML = `<span>${t.date.split(',')[0]}</span><span>${t.reason}</span><span>${sign}${Math.abs(t.amt).toFixed(2)}</span>`;
-        childTxnsDiv.appendChild(d);
-      }
-    }
-
-    function showChild() {
-      childPanel.classList.remove('hidden');
-      renderChild();
-    }
-
-    /* ============== SWITCH / LOGOUT ========= */
-    function logout() {
-      clearLastUser();
-      currentUser = null;
-      parentPanel.classList.add('hidden');
-      childPanel.classList.add('hidden');
-      loginDiv.classList.remove('hidden');
-    }
-
-    function switchChild() {
-      logout();
-      // focus username for easier typing
-      usernameInput.value = ''; passwordInput.value = ''; usernameInput.focus();
-    }
-
-    /* ============== DOM EVENTS ============== */
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('loginBtn').addEventListener('click', () => authenticate(usernameInput.value.trim().toLowerCase(), passwordInput.value.trim()));
-      document.getElementById('btnAbdullah').addEventListener('click', () => authenticate('abdullah','1234'));
-      document.getElementById('btnMusab').addEventListener('click', () => authenticate('musab','1234'));
-      document.getElementById('giveBtn').addEventListener('click', handleGive);
-      document.getElementById('logoutParent').addEventListener('click', logout);
-      document.getElementById('logoutChild').addEventListener('click', logout);
-      document.getElementById('switchUser').addEventListener('click', switchChild);
-    });
-  </script>
-</body>
-</html>
+/************************ DOM EVENTS *******************************/
+document.addEventListener('DOMContentLoaded',()=>{
+  document

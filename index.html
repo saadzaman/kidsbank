@@ -142,7 +142,14 @@ function populateChildSelect(){
   sel.innerHTML=''; swSel.innerHTML='';
   Object.keys(data.accounts).forEach(k=>{
     let o1=document.createElement('option');o1.value=k;o1.textContent=k;sel.appendChild(o1);
+    
+  if(!!currentUser) {
+   o1.selected =   o1.value == currentUser 
+  }
     let o2=document.createElement('option');o2.value=k;o2.textContent=k;swSel.appendChild(o2);
+    if(!!currentUser) {
+   o2.selected =   o2.value == currentUser 
+  }
   });
 }
 function renderParentBalances(){

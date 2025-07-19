@@ -5,253 +5,198 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Kids Bank (Cloud)</title>
 <style>
-body {
-  font-family: sans-serif;
-  margin: 0;
-  padding: 1rem;
-  max-width: 480px;
-  margin: auto;
-  background: #f8f8f8;
-}
-.hidden {
-  display: none;
-}
-header {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 1rem;
-}
-input,
-select,
-button {
-  font-size: 1rem;
-  padding: 0.5rem;
-  margin: 0.25rem 0;
-  width: 100%;
-  box-sizing: border-box;
-}
-button {
-  cursor: pointer;
-  background: #4caf50;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-}
-button:hover {
-  opacity: 0.9;
-}
-.card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-.balance {
-  font-size: 2rem;
-  font-weight: bold;
-  text-align: center;
-  margin: 0.5rem 0;
-}
-.txn {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.25rem 0;
-  border-bottom: 1px solid #eee;
-}
-.txn:last-child {
-  border-bottom: none;
-}
-.quick-login {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 1rem;
-}
-.quick-login button {
-  width: auto;
-  padding: 0.5rem 1rem;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-weight: bold;
-}
-.quick-parent {
-  background: black;
-}
-.quick-abdullah {
-  background: blue;
-}
-.quick-musab {
-  background: green;
-}
+body{font-family:sans-serif;margin:0;padding:1rem;max-width:480px;margin:auto;background:#f8f8f8}
+.hidden{display:none}
+header{display:flex;justify-content:center;margin-bottom:1rem}
+input,select,button{font-size:1rem;padding:0.5rem;margin:0.25rem 0;width:100%;box-sizing:border-box}
+button{cursor:pointer;background:#4caf50;color:#fff;border:none;border-radius:4px}
+button:hover{opacity:.9}
+.card{background:#fff;border-radius:8px;padding:1rem;margin-bottom:1rem;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+.balance{font-size:2rem;font-weight:700;text-align:center;margin:.5rem 0}
+.txn{display:flex;justify-content:space-between;padding:.25rem 0;border-bottom:1px solid #eee}
+.txn:last-child{border-bottom:none}
+.quick-login{display:flex;justify-content:space-around;margin-top:1rem}
+.quick-login button{width:auto;padding:.5rem 1rem;color:#fff;border:none;border-radius:4px;font-weight:700}
+.quick-parent{background:#000}
+.quick-abdullah{background:#2196f3}
+.quick-musab{background:#4caf50}
 </style>
 </head>
 <body>
-  <header><h2>Kids Bank</h2></header>
-  <div id="login" class="card">
-    <h3>Login</h3>
-    <input id="username" placeholder="Username" />
-    <input id="password" type="password" placeholder="Password" />
-    <button id="loginBtn">Login</button>
-    <p id="loginErr" style="color: red"></p>
-    <div class="quick-login">
-      <button class="quick-parent" onclick="quickLogin('parent', 'admin')">Parent</button>
-      <button class="quick-abdullah" onclick="quickLogin('abdullah', '1234')">Abdullah</button>
-      <button class="quick-musab" onclick="quickLogin('musab', '1234')">Musab</button>
-    </div>
+<header><h2>Kids Bank</h2></header>
+<div id="login" class="card">
+  <h3>Login</h3>
+  <input id="username" placeholder="Username" />
+  <input id="password" type="password" placeholder="Password" />
+  <button id="loginBtn">Login</button>
+  <p id="loginErr" style="color:red"></p>
+  <div class="quick-login">
+    <button class="quick-parent"   onclick="quickLogin('parent','admin')">Parent</button>
+    <button class="quick-abdullah" onclick="quickLogin('abdullah','1234')">Abdullah</button>
+    <button class="quick-musab"    onclick="quickLogin('musab','1234')">Musab</button>
   </div>
+</div>
 
-  <div id="parentPanel" class="hidden">
-    <div class="card">
-      <h3>Give Money / Deduct</h3>
-      <select id="childSelect"></select>
-      <select id="txnType">
-        <option value="credit">Credit</option>
-        <option value="debit">Debit</option>
-      </select>
-      <input id="reason" placeholder="Reason" />
-      <input id="amount" type="number" placeholder="Amount" />
-      <button id="giveBtn">Send</button>
-    </div>
-    <div id="parentBalances" class="card"></div>
+<div id="parentPanel" class="hidden">
+  <div class="card">
+    <h3>Give Money / Deduct</h3>
+    <select id="childSelect"></select>
+    <select id="txnType">
+      <option value="credit">Credit</option>
+      <option value="debit">Debit</option>
+    </select>
+    <input id="reason" placeholder="Reason" />
+    <input id="amount" type="number" placeholder="Amount" />
+    <button id="giveBtn">Send</button>
   </div>
+  <div id="parentBalances" class="card"></div>
+</div>
 
-  <div id="childPanel" class="hidden">
-    <div class="card">
-      <h3>Hello, <span id="childName"></span></h3>
-      <div class="balance" id="childBalance">0</div>
-    </div>
-    <div class="card">
-      <h3>Transactions</h3>
-      <div id="childTxns"></div>
-    </div>
+<div id="childPanel" class="hidden">
+  <div class="card">
+    <h3>Hello, <span id="childName"></span></h3>
+    <div class="balance" id="childBalance">0</div>
   </div>
+  <div class="card">
+    <h3>Transactions</h3>
+    <div id="childTxns"></div>
+  </div>
+</div>
 
-  <script>
-    /* ======== CONFIGURE YOUR JSONBIN.IO DETAILS HERE ======== */
-    const BIN_ID = "687bd846480911522001db09"; // 🔴 replace with your bin ID
-    const API_KEY = "$2a$10$xcf960ZHIYlWyWFGWqu15Osv.zaYf23iItcX7EODdz/PnCHcrLB02"; // 🔴 replace with your X-Master-Key
-    /* ======================================================== */
+<script>
+/* ======== CONFIGURE YOUR JSONBIN.IO DETAILS HERE ======== */
+const BIN_ID  = "687bd846480911522001db09";  // 🔴 replace with your Bin ID
+const API_KEY = "$2a$10$xcf960ZHIYlWyWFGWqu15Osv.zaYf23iItcX7EODdz/PnCHcrLB02"; // 🔴 replace with your X-Master-Key
+/* ======================================================== */
+const BASE_URL   = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+const READ_URL   = `${BASE_URL}/latest`;
+const defaultData = {
+  users:{ abdullah:{password:'1234',role:'child'}, musab:{password:'1234',role:'child'}, parent:{password:'admin',role:'parent'} },
+  accounts:{ abdullah:{balance:0,transactions:[]}, musab:{balance:0,transactions:[]} }
+};
+let data = null;
+let currentUser = null;
 
-    const BASE_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-    const defaultData = {
-      users: {
-        abdullah: { password: "1234", role: "child" },
-        musab: { password: "1234", role: "child" },
-        parent: { password: "admin", role: "parent" },
-      },
-      accounts: {
-        abdullah: { balance: 0, transactions: [] },
-        musab: { balance: 0, transactions: [] },
-      },
-    };
+// ========= Cloud Persistence ========= //
+async function loadData(){
+  try{
+    const res = await fetch(READ_URL,{ headers:{ 'X-Master-Key':API_KEY, 'X-Bin-Meta':'false' } });
+    if(!res.ok) throw new Error('bin missing');
+    const record = await res.json();
+    // when X-Bin-Meta:false -> raw record, otherwise {record:...}
+    return record.record ?? record;
+  }catch(err){
+    console.warn('Initial load failed, creating bin...', err.message);
+    await saveData(defaultData); // will create if not existing
+    return structuredClone(defaultData);
+  }
+}
+async function saveData(newData){
+  // keep only 20 txns per child
+  Object.values(newData.accounts).forEach(acc=>{acc.transactions = acc.transactions.slice(0,20);});
+  const res = await fetch(BASE_URL,{
+    method:'PUT',
+    headers:{ 'Content-Type':'application/json', 'X-Master-Key':API_KEY },
+    body: JSON.stringify({ record: newData })
+  });
+  if(!res.ok){
+    const txt = await res.text();
+    console.error('Save failed',res.status,txt);
+    alert('Cloud save failed, check console.');
+  }
+}
 
-    let data = null;
-    let currentUser = null;
+// ========= UI Logic ========= //
+window.addEventListener('DOMContentLoaded', async ()=>{
+  data = await loadData();
+  // Event listeners
+  document.getElementById('loginBtn').addEventListener('click', handleLoginClick);
+  document.getElementById('giveBtn').addEventListener('click', handleGive);
+  populateChildSelect();
+});
 
-    // ---------- Cloud Persistence Helpers ---------- //
-    async function loadData() {
-      try {
-        const res = await fetch(`${BASE_URL}/latest`, {
-          headers: {
-            "X-Master-Key": API_KEY,
-            "X-Bin-Meta": false, // return raw record only
-          },
-        });
-        if (!res.ok) throw new Error("Bin not found");
-        const record = await res.json();
-        return record;
-      } catch (err) {
-        console.warn("loadData fallback (", err.message, ") – initialising bin");
-        await createBin(defaultData);
-        return structuredClone(defaultData);
-      }
-    }
+function handleLoginClick(){
+  const u = document.getElementById('username').value.trim().toLowerCase();
+  const p = document.getElementById('password').value.trim();
+  authenticate(u,p);
+}
+// Make quickLogin globally accessible
+function quickLogin(u,p){ authenticate(u,p); }
+window.quickLogin = quickLogin;
 
-    async function createBin(initialData) {
-      await fetch(`${BASE_URL}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Master-Key": API_KEY,
-        },
-        body: JSON.stringify({ record: initialData }),
-      });
-    }
+function authenticate(u,p){
+  const loginErr = document.getElementById('loginErr');
+  if(data.users[u] && data.users[u].password===p){
+    currentUser=u;
+    document.getElementById('login').classList.add('hidden');
+    if(data.users[u].role==='parent') showParent(); else showChild();
+  }else{
+    loginErr.textContent='Invalid credentials';
+  }
+}
 
-    async function saveData(newData) {
-      // keep ONLY last 20 transactions per child
-      for (const acc of Object.values(newData.accounts)) {
-        acc.transactions = acc.transactions.slice(0, 20);
-      }
-      const res = await fetch(`${BASE_URL}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Master-Key": API_KEY,
-        },
-        body: JSON.stringify({ record: newData }),
-      });
-      if (!res.ok) {
-        console.error("Save failed", await res.text());
-        alert("Could not save to cloud. Check console for details.");
-      }
-    }
+function populateChildSelect(){
+  const sel = document.getElementById('childSelect');
+  sel.innerHTML='';
+  for(const child of Object.keys(defaultData.accounts)){
+    const opt=document.createElement('option');
+    opt.value=child; opt.textContent=child;
+    sel.appendChild(opt);
+  }
+}
 
-    // ---------- UI Logic ---------- //
-    window.addEventListener("DOMContentLoaded", init);
+// ---- Parent view ---- //
+function showParent(){
+  document.getElementById('parentPanel').classList.remove('hidden');
+  renderParentBalances();
+}
+async function handleGive(){
+  const child = document.getElementById('childSelect').value;
+  const reason= document.getElementById('reason').value.trim();
+  const amtVal = parseFloat(document.getElementById('amount').value);
+  const type   = document.getElementById('txnType').value;
+  if(!child||!reason||isNaN(amtVal)){ alert('Fill all fields'); return; }
+  const signedAmt = type==='debit' ? -amtVal : amtVal;
+  const acc = data.accounts[child];
+  acc.balance += signedAmt;
+  acc.transactions.unshift({ reason, amt:signedAmt, date: new Date().toLocaleString() });
+  await saveData(data);
+  document.getElementById('reason').value='';
+  document.getElementById('amount').value='';
+  renderParentBalances();
+  if(child===currentUser) renderChild(); // if parent acting as its own child session (unlikely)
+}
+function renderParentBalances(){
+  const container = document.getElementById('parentBalances');
+  container.innerHTML='<h3>Balances</h3>';
+  for(const [c,acc] of Object.entries(data.accounts)){
+    const div=document.createElement('div');
+    div.className='txn';
+    div.innerHTML=`<span>${c}</span><span>${acc.balance.toFixed(2)}</span>`;
+    container.appendChild(div);
+  }
+}
 
-    async function init() {
-      data = await loadData();
-
-      // Set up event handlers after data is ready
-      document.getElementById("loginBtn").onclick = handleLoginClick;
-      renderChildOptions();
-    }
-
-    function handleLoginClick() {
-      const u = document.getElementById("username").value.trim().toLowerCase();
-      const p = document.getElementById("password").value.trim();
-      authenticate(u, p);
-    }
-
-    function quickLogin(u, p) {
-      document.getElementById("username").value = u;
-      document.getElementById("password").value = p;
-      authenticate(u, p);
-    }
-
-    function authenticate(u, p) {
-      const loginErr = document.getElementById("loginErr");
-      if (data.users[u] && data.users[u].password === p) {
-        currentUser = u;
-        document.getElementById("login").classList.add("hidden");
-        if (data.users[u].role === "parent") showParent();
-        else showChild();
-      } else {
-        loginErr.textContent = "Invalid credentials";
-      }
-    }
-
-    // ---------- Parent View ---------- //
-    function renderChildOptions() {
-      const sel = document.getElementById("childSelect");
-      sel.innerHTML = "";
-      for (const child of Object.keys(data.accounts)) {
-        const opt = document.createElement("option"); // fixed typo here
-        opt.value = child;
-        opt.textContent = child;
-        sel.appendChild(opt);
-      }
-    }
-
-    function showParent() {
-      const panel = document.getElementById("parentPanel");
-      panel.classList.remove("hidden");
-
-      document.getElementById("giveBtn").onclick = async () => {
-        const child = document.getElementById("childSelect").value;
-        const reason = document.getElementById("reason").value.trim();
-        const amt = parseFloat(document.getElementById("amount").value);
-        const type = document.getElementById("txnType").value;
-        if (!child || !reason || isNaN
+// ---- Child view ---- //
+function showChild(){
+  document.getElementById('childPanel').classList.remove('hidden');
+  document.getElementById('childName').textContent=currentUser;
+  renderChild();
+}
+function renderChild(){
+  const acc=data.accounts[currentUser];
+  document.getElementById('childBalance').textContent=acc.balance.toFixed(2);
+  const list=document.getElementById('childTxns');
+  list.innerHTML='';
+  if(acc.transactions.length===0){ list.textContent='No transactions yet.'; return; }
+  acc.transactions.forEach(t=>{
+    const div=document.createElement('div');
+    div.className='txn';
+    const sign=t.amt>=0 ? '+' : '-';
+    div.innerHTML=`<span>${t.date.split(',')[0]}</span><span>${t.reason}</span><span>${sign}${Math.abs(t.amt).toFixed(2)}</span>`;
+    list.appendChild(div);
+  });
+}
+</script>
+</body>
+</html>

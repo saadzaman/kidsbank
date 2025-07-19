@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kids Bank</title>
+<style>
+body{font-family:sans-serif;margin:0;padding:1rem;max-width:480px;margin:auto;background:#f8f8f8;}
+.hidden{display:none;}
+header{display:flex;justify-content:center;margin-bottom:1rem;}
+input,select,button{font-size:1rem;padding:0.5rem;margin:0.25rem 0;width:100%;box-sizing:border-box;}
+button{cursor:pointer;background:#4caf50;color:#fff;border:none;border-radius:4px;}
+button:hover{opacity:0.9;}
+.card{background:#fff;border-radius:8px;padding:1rem;margin-bottom:1rem;box-shadow:0 2px 4px rgba(0,0,0,0.1);}
+.balance{font-size:2rem;font-weight:bold;text-align:center;margin:0.5rem 0;}
+.txn{display:flex;justify-content:space-between;padding:0.25rem 0;border-bottom:1px solid #eee;}
+.txn:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+
+<header><h2>Kids Bank</h2></header>
+
+<div id="login" class="card">
+  <h3>Login</h3>
+  <input id="username" placeholder="Username"/>
+  <input id="password" type="password" placeholder="Password"/>
+  <button id="loginBtn">Login</button>
+  <p id="loginErr" style="color:red;"></p>
+</div>
+
+<div id="parentPanel" class="hidden">
+  <div class="card">
+    <h3>Give Money</h3>
+    <select id="childSelect"></select>
+    <input id="reason" placeholder="Reason"/>
+    <input id="amount" type="number" placeholder="Amount"/>
+    <button id="giveBtn">Send</button>
+  </div>
+  <div id="parentBalances" class="card">
+    <!-- balances will render here -->
+  </div>
+</div>
+
+<div id="childPanel" class="hidden">
+  <div class="card">
+    <h3>Hello, <span id="childName"></span></h3>
+    <div class="balance" id="childBalance">0</div>
+  </div>
+  <div class="card">
+    <h3>Transactions</h3>
+    <div id="childTxns"></div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY='kidsBankData';
+const defaultData={
+  users:{
+    abdullah:{password:'1234',role:'child'},
+    musab:{password:'1234',role:'child'},
+    parent:{password:'admin',role:'parent'}
+  },
+  accounts:{
+    abdullah:{balance:0,transactions:[]},
+    musab:{balance:0,transactions:[]}
+  }
+};
+function loadData(){
+  const d=localStorage.getItem(STORAGE_KEY);
+  if(!d){localStorage.setItem(STORAGE_KEY,JSON.stringify(defaultData));return structuredClone(defaultData);} 
+  try{return JSON.parse(d);}catch(e){localStorage.setItem(STORAGE_KEY,JSON.stringify(defaultData));return structuredClone(defaultData);} 
+}
+function saveData(data){localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}
+let data=loadData();
+let currentUser=null;
+
+const loginBtn=document.getElementById('loginBtn');
+const loginErr=document.getElementById('loginErr');
+loginBtn.onclick=()=>{
+  const u=document.getElementById('username').value.trim().toLowerCase();
+  const p=document.getElementById('password').value.trim();
+  if(data.users[u]&&data.users[u].password===p){
+    currentUser=u;
+    document.getElementById('login').classList.add('hidden');
+    if(data.users[u].role==='parent'){showParent();}
+    else{showChild();}
+  }else{loginErr.textContent='Invalid credentials';}
+};
+
+function showParent(){
+  const panel=document.getElementById('parentPanel');
+  panel.classList.remove('hidden');
+  const sel=document.getElementById('childSelect');
+  sel.innerHTML='';
+  for(const child of Object.keys(data.accounts)){
+    const opt=document.createElement('option');
+    opt.value=child;opt.textContent=child;
+    sel.appendChild(opt);
+  }
+  document.getElementById('giveBtn').onclick=()=>{
+    const child=sel.value;
+    const reason=document.getElementById('reason').value.trim();
+    const amt=parseFloat(document.getElementById('amount').value);
+    if(!child||!reason||isNaN(amt)){alert('Fill all fields');return;}
+    data.accounts[child].balance+=amt;
+    data.accounts[child].transactions.unshift({reason,amt,date:new Date().toLocaleString()});
+    saveData(data);
+    document.getElementById('reason').value='';
+    document.getElementById('amount').value='';
+    renderParentBalances();
+  };
+  renderParentBalances();
+}
+function renderParentBalances(){
+  const container=document.getElementById('parentBalances');
+  container.innerHTML='<h3>Balances</h3>';
+  for(const [child,acc] of Object.entries(data.accounts)){
+    const div=document.createElement('div');
+    div.className='txn';
+    div.innerHTML=`<span>${child}</span><span>${acc.balance.toFixed(2)}</span>`;
+    container.appendChild(div);
+  }
+}
+
+function showChild(){
+  const panel=document.getElementById('childPanel');
+  panel.classList.remove('hidden');
+  document.getElementById('childName').textContent=currentUser;
+  renderChild();
+}
+function renderChild(){
+  const acc=data.accounts[currentUser];
+  document.getElementById('childBalance').textContent=acc.balance.toFixed(2);
+  const list=document.getElementById('childTxns');
+  list.innerHTML='';
+  if(acc.transactions.length===0){list.textContent='No transactions yet.';return;}
+  for(const t of acc.transactions){
+    const div=document.createElement('div');
+    div.className='txn';
+    div.innerHTML=`<span>${t.date.split(',')[0]}</span><span>${t.reason}</span><span>${t.amt.toFixed(2)}</span>`;
+    list.appendChild(div);
+  }
+}
+</script>
+
+</body>
+</html>

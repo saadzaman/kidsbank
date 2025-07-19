@@ -105,22 +105,31 @@ async function loadData(){
     return structuredClone(DEFAULT_DATA);
   }
 }
-async function saveData(newData){
-  Object.values(newData.accounts).forEach(acc=>{
-    acc.transactions = acc.transactions.slice(0,MAX_TXNS);
+async function saveData(newData) {
+  // keep latest 20 txns
+  Object.values(newData.accounts).forEach(a => {
+    a.transactions = a.transactions.slice(0, MAX_TXNS);
   });
-  try{
-    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`,{
-      method:'PUT',
-      headers:{
-        'Content-Type':'application/json',
-        'X-Master-Key':API_KEY
-      },
-      body:JSON.stringify({record:newData})
-    });
-  }catch(err){
-    console.error('saveData failed',err);
-    alert('Could not save data. Check console.');
+
+  const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Master-Key": API_KEY,
+      // ⚠️ uncomment next line **only** if your bin is “Secret (private)”
+      // "X-Access-Key": "<YOUR_ACCESS_KEY>"
+    },
+    body: JSON.stringify({ record: newData })
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    alert(
+      `❌  jsonbin returned ${res.status}. ` +
+      `Open the console for details.`
+    );
+    console.error("jsonbin PUT error", res.status, text);
+    throw new Error("jsonbin write failed");
   }
 }
 function setLastUser(u){ localStorage.setItem('kidsBankLastUser',u); }

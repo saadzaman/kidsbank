@@ -69,8 +69,8 @@
 
 <script>
 /* ====== CONFIG ====== */
-const BIN_ID   = "687bd846480911522001db09";
-const API_KEY  = "$2a$10$BB0v8qWkEKADSXDUG7azp.6KMczQbobXJNaM.Xx1qPOCNz7S7smpe";
+const BIN_ID   = "YOUR_BIN_ID";
+const API_KEY  = "YOUR_API_KEY";
 const MAX_TXNS = 20;
 const DEFAULT_DATA = {
   users:{
@@ -99,14 +99,13 @@ async function loadData(){
       return structuredClone(DEFAULT_DATA);
     }
     const json = await res.json();
-    return json;
+    return json ?? structuredClone(DEFAULT_DATA);
   }catch(err){
     console.error('loadData failed',err);
     return structuredClone(DEFAULT_DATA);
   }
 }
 async function saveData(newData){
-  // cap transactions
   Object.values(newData.accounts).forEach(acc=>{
     acc.transactions = acc.transactions.slice(0,MAX_TXNS);
   });
@@ -186,6 +185,7 @@ function logout(){
   document.getElementById('login').classList.remove('hidden');
 }
 function authenticate(u,p){
+  if(!data || !data.users){ alert('Data not loaded.'); return; }
   if(data.users[u] && data.users[u].password===p){
     currentUser=u;
     setLastUser(u);
@@ -198,9 +198,15 @@ function authenticate(u,p){
 /* ====== main init ====== */
 async function init(){
   data = await loadData();
+  // ensure essential keys
+  data.users = data.users ?? structuredClone(DEFAULT_DATA.users);
+  data.accounts = data.accounts ?? structuredClone(DEFAULT_DATA.accounts);
+
   // auto-login if remembered
   const last=localStorage.getItem('kidsBankLastUser');
   if(last && data.users[last]){ currentUser=last; (data.users[last].role==='parent')?showParent():showChild(); }
+
+  populateChildSelect();
 
   // login form
   document.getElementById('loginBtn').addEventListener('click',()=>{

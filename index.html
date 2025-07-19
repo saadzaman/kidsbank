@@ -32,9 +32,8 @@ button:hover{opacity:.9}
   <button id="loginBtn">Login</button>
   <p id="loginErr" style="color:red"></p>
   <div class="quick-login">
-    <!-- Parent quick-login removed as requested -->
-    <button id="quickAbdullah" class="quick-abdullah">Abdullah</button>
-    <button id="quickMusab"    class="quick-musab">Musab</button>
+    <button class="quick-abdullah" onclick="quickLogin('abdullah','1234')">Abdullah</button>
+    <button class="quick-musab"    onclick="quickLogin('musab','1234')">Musab</button>
   </div>
 </div>
 
@@ -72,13 +71,14 @@ button:hover{opacity:.9}
 
 <script>
 /**************** CONFIGURE YOUR JSONBIN.IO DETAILS ***************/
-const BIN_ID  = "687bd846480911522001db09";  // 🔴 replace with your Bin ID
-const API_KEY = "$2a$10$BB0v8qWkEKADSXDUG7azp.6KMczQbobXJNaM.Xx1qPOCNz7S7smpe"; // 🔴 replace with your X-Master-Key
+const BIN_ID  = "YOUR_BIN_ID";  // <-- replace with your Bin ID
+const API_KEY = "YOUR_API_KEY"; // <-- replace with your X-Master-Key
 /*****************************************************************/
 const BASE_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 const READ_URL = `${BASE_URL}/latest`;
 const LAST_USER_KEY = 'kidsBankLastUser';
 
+// ---- Default dataset (used to initialize a new bin) ---- //
 const defaultData = {
   users:{ abdullah:{password:'1234',role:'child'}, musab:{password:'1234',role:'child'}, parent:{password:'admin',role:'parent'} },
   accounts:{ abdullah:{balance:0,transactions:[]}, musab:{balance:0,transactions:[]} }
@@ -86,41 +86,48 @@ const defaultData = {
 
 let data = null;
 let currentUser = null;
-let dataReadyResolve;
-const dataReady = new Promise(res=>dataReadyResolve=res);
 
-// ========= Cloud Persistence ========= //
+// ========== Cloud Persistence ==========
 async function loadData(){
   try{
     const res = await fetch(READ_URL,{ headers:{ 'X-Master-Key':API_KEY, 'X-Bin-Meta':'false' } });
-    if(!res.ok) throw new Error('bin missing');
+    if(!res.ok) throw new Error('Bin missing');
     return await res.json();
   }catch(err){
-    console.warn('Initial load failed, creating bin...', err.message);
+    console.warn('Load failed, creating bin with defaults:', err.message);
     await saveData(defaultData);
     return structuredClone(defaultData);
   }
 }
+
 async function saveData(newData){
+  // keep only last 20 txns per child
   Object.values(newData.accounts).forEach(acc=>{ acc.transactions = acc.transactions.slice(0,20); });
   const res = await fetch(BASE_URL,{
     method:'PUT',
     headers:{ 'Content-Type':'application/json', 'X-Master-Key':API_KEY },
-    body: JSON.stringify({ record: newData })
+    body: JSON.stringify({ record:newData })
   });
   if(!res.ok){
-    const txt = await res.text();
+    const txt=await res.text();
     console.error('Save failed',res.status,txt);
-    alert('Cloud save failed, check console.');
+    alert('Cloud save failed (see console)');
   }
 }
 
-// ========= UI Logic ========= //
+// ========== UI Logic ==========
+// Declare quickLogin BEFORE any potential clicks
+function quickLogin(u,p){
+  document.getElementById('username').value=u;
+  document.getElementById('password').value=p;
+  handleLoginClick();
+}
+window.quickLogin = quickLogin;
+
 window.addEventListener('DOMContentLoaded', async ()=>{
   data = await loadData();
-  populateChildSelect();
-  dataReadyResolve();
   attachEventListeners();
+  populateChildSelect();
   attemptAutoLogin();
 });
 
@@ -130,22 +137,92 @@ function attachEventListeners(){
   document.getElementById('logoutBtnParent').addEventListener('click', logout);
   document.getElementById('logoutBtnChild').addEventListener('click', logout);
   document.getElementById('switchBtn').addEventListener('click', handleChildSwitch);
-
-  // quick login buttons (child only)
-  document.getElementById('quickAbdullah').addEventListener('click', () => authenticate('abdullah','1234'));
-  document.getElementById('quickMusab').addEventListener('click',    () => authenticate('musab','1234'));
 }
 
 function handleLoginClick(){
-  const u = document.getElementById('username').value.trim().toLowerCase();
-  const p = document.getElementById('password').value.trim();
+  const u=document.getElementById('username').value.trim().toLowerCase();
+  const p=document.getElementById('password').value.trim();
   authenticate(u,p);
 }
 
 function authenticate(u,p){
-  const loginErr = document.getElementById('loginErr');
-  if(!data){ loginErr.textContent='Loading...'; return; }
+  const loginErr=document.getElementById('loginErr');
+  if(!data){ loginErr.textContent='Loading…'; return; }
   if(data.users[u] && data.users[u].password===p){
     currentUser=u;
     localStorage.setItem(LAST_USER_KEY,currentUser);
-    document.getElementBy
+    document.getElementById('login').classList.add('hidden');
+    (data.users[u].role==='parent')?showParent():showChild();
+    loginErr.textContent='';
+  }else{
+    loginErr.textContent='Invalid credentials';
+  }
+}
+
+function attemptAutoLogin(){
+  const last=localStorage.getItem(LAST_USER_KEY);
+  if(last && defaultData.users[last]){ // using defaultData for role reference
+    currentUser=last;
+    document.getElementById('login').classList.add('hidden');
+    (defaultData.users[last].role==='parent')?showParent():showChild();
+  }
+}
+
+// ------------- Parent View -------------
+function populateChildSelect(){
+  const sel=document.getElementById('childSelect');
+  const switchSel=document.getElementById('switchChildSelect');
+  sel.innerHTML='';
+  switchSel.innerHTML='';
+  for(const child of Object.keys(defaultData.accounts)){
+    const opt1=document.createElement('option');
+    opt1.value=child; opt1.textContent=child;
+    sel.appendChild(opt1);
+    const opt2=opt1.cloneNode(true);
+    switchSel.appendChild(opt2);
+  }
+}
+
+function showParent(){
+  document.getElementById('parentPanel').classList.remove('hidden');
+  document.getElementById('childPanel').classList.add('hidden');
+  renderParentBalances();
+}
+
+async function handleGive(){
+  const child=document.getElementById('childSelect').value;
+  const reason=document.getElementById('reason').value.trim();
+  const amt=parseFloat(document.getElementById('amount').value);
+  const type=document.getElementById('txnType').value;
+  if(!child||!reason||isNaN(amt)){ alert('Fill all fields'); return; }
+  const signedAmt = type==='debit' ? -amt : amt;
+  const txn = { reason, amt:signedAmt, date:new Date().toLocaleString() };
+  const acc=data.accounts[child];
+  acc.balance += signedAmt;
+  acc.transactions.unshift(txn);
+  await saveData(data);
+  // reset inputs
+  document.getElementById('reason').value='';
+  document.getElementById('amount').value='';
+  renderParentBalances();
+  if(currentUser===child){ renderChild(); }
+}
+
+function renderParentBalances(){
+  const container=document.getElementById('parentBalances');
+  container.innerHTML='<h3>Balances</h3>';
+  for(const [child,acc] of Object.entries(data.accounts)){
+    const div=document.createElement('div');
+    div.className='txn';
+    div.innerHTML=`<span>${child}</span><span>${acc.balance.toFixed(2)}</span>`;
+    container.appendChild(div);
+  }
+}
+
+// ------------- Child View -------------
+function showChild(){
+  document.getElementById('parentPanel').classList.add('hidden');
+  document.getElementById('childPanel').classList.remove('hidden');
+  renderChild();
+}
+

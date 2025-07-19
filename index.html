@@ -33,8 +33,8 @@ button:hover{opacity:.9}
   <p id="loginErr" style="color:red"></p>
   <div class="quick-login">
     <!-- Parent quick-login removed as requested -->
-    <button class="quick-abdullah" onclick="quickLogin('abdullah','1234')">Abdullah</button>
-    <button class="quick-musab"    onclick="quickLogin('musab','1234')">Musab</button>
+    <button id="quickAbdullah" class="quick-abdullah">Abdullah</button>
+    <button id="quickMusab"    class="quick-musab">Musab</button>
   </div>
 </div>
 
@@ -130,6 +130,10 @@ function attachEventListeners(){
   document.getElementById('logoutBtnParent').addEventListener('click', logout);
   document.getElementById('logoutBtnChild').addEventListener('click', logout);
   document.getElementById('switchBtn').addEventListener('click', handleChildSwitch);
+
+  // quick login buttons (child only)
+  document.getElementById('quickAbdullah').addEventListener('click', () => authenticate('abdullah','1234'));
+  document.getElementById('quickMusab').addEventListener('click',    () => authenticate('musab','1234'));
 }
 
 function handleLoginClick(){
@@ -138,60 +142,10 @@ function handleLoginClick(){
   authenticate(u,p);
 }
 
-async function quickLogin(u,p){
-  await dataReady;
-  authenticate(u,p);
-}
-window.quickLogin = quickLogin; // ensure global
-
 function authenticate(u,p){
   const loginErr = document.getElementById('loginErr');
   if(!data){ loginErr.textContent='Loading...'; return; }
   if(data.users[u] && data.users[u].password===p){
     currentUser=u;
     localStorage.setItem(LAST_USER_KEY,currentUser);
-    document.getElementById('login').classList.add('hidden');
-    if(data.users[u].role==='parent') showParent(); else showChild();
-  }else{
-    loginErr.textContent='Invalid credentials';
-  }
-}
-
-function populateChildSelect(){
-  const sel = document.getElementById('childSelect');
-  if(!sel) return;
-  sel.innerHTML='';
-  for(const child of Object.keys(data.accounts)){
-    const opt=document.createElement('option');
-    opt.value=child; opt.textContent=child;
-    sel.appendChild(opt);
-  }
-}
-function populateSwitchChildSelect(){
-  const sel = document.getElementById('switchChildSelect');
-  if(!sel) return;
-  sel.innerHTML='';
-  for(const child of Object.keys(data.accounts)){
-    const opt=document.createElement('option');
-    opt.value=child; opt.textContent=child;
-    if(child===currentUser) opt.selected=true;
-    sel.appendChild(opt);
-  }
-}
-
-function attemptAutoLogin(){
-  const last = localStorage.getItem(LAST_USER_KEY);
-  if(last && data.users[last]){
-    currentUser=last;
-    document.getElementById('login').classList.add('hidden');
-    if(data.users[last].role==='parent') showParent(); else showChild();
-  }
-}
-// ---- Parent view ---- //
-function showParent(){
-  document.getElementById('parentPanel').classList.remove('hidden');
-  document.getElementById('childPanel').classList.add('hidden');
-  renderParentBalances();
-}
-async function handleGive(){
-  const child = document.get
+    document.getElementBy

@@ -20,6 +20,8 @@ button:hover{opacity:.9}
 .quick-parent{background:#000}
 .quick-abdullah{background:#2196f3}
 .quick-musab{background:#4caf50}
+#childControls{display:flex;gap:.5rem;justify-content:center;margin-top:.5rem}
+#childControls button{flex:1}
 </style>
 </head>
 <body>
@@ -31,7 +33,7 @@ button:hover{opacity:.9}
   <button id="loginBtn">Login</button>
   <p id="loginErr" style="color:red"></p>
   <div class="quick-login">
-<!--     <button class="quick-parent"   onclick="quickLogin('parent','admin')">Parent</button> -->
+    <button class="quick-parent"   onclick="quickLogin('parent','admin')">Parent</button>
     <button class="quick-abdullah" onclick="quickLogin('abdullah','1234')">Abdullah</button>
     <button class="quick-musab"    onclick="quickLogin('musab','1234')">Musab</button>
   </div>
@@ -48,6 +50,7 @@ button:hover{opacity:.9}
     <input id="reason" placeholder="Reason" />
     <input id="amount" type="number" placeholder="Amount" />
     <button id="giveBtn">Send</button>
+    <button id="logoutBtnParent" style="margin-top:.5rem;background:#e91e63">Logout</button>
   </div>
   <div id="parentBalances" class="card"></div>
 </div>
@@ -56,6 +59,11 @@ button:hover{opacity:.9}
   <div class="card">
     <h3>Hello, <span id="childName"></span></h3>
     <div class="balance" id="childBalance">0</div>
+    <div id="childControls">
+      <select id="switchChildSelect"></select>
+      <button id="switchBtn">Switch</button>
+      <button id="logoutBtnChild" style="background:#e91e63">Logout</button>
+    </div>
   </div>
   <div class="card">
     <h3>Transactions</h3>
@@ -64,16 +72,19 @@ button:hover{opacity:.9}
 </div>
 
 <script>
-/* ======== CONFIGURE YOUR JSONBIN.IO DETAILS HERE ======== */
+/**************** CONFIGURE YOUR JSONBIN.IO DETAILS ***************/
 const BIN_ID  = "687bd846480911522001db09";  // 🔴 replace with your Bin ID
 const API_KEY = "$2a$10$BB0v8qWkEKADSXDUG7azp.6KMczQbobXJNaM.Xx1qPOCNz7S7smpe"; // 🔴 replace with your X-Master-Key
-/* ======================================================== */
-const BASE_URL   = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-const READ_URL   = `${BASE_URL}/latest`;
+/*****************************************************************/
+const BASE_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+const READ_URL = `${BASE_URL}/latest`;
+const LAST_USER_KEY = 'kidsBankLastUser';
+
 const defaultData = {
   users:{ abdullah:{password:'1234',role:'child'}, musab:{password:'1234',role:'child'}, parent:{password:'admin',role:'parent'} },
   accounts:{ abdullah:{balance:0,transactions:[]}, musab:{balance:0,transactions:[]} }
 };
+
 let data = null;
 let currentUser = null;
 let dataReadyResolve;
@@ -84,8 +95,7 @@ async function loadData(){
   try{
     const res = await fetch(READ_URL,{ headers:{ 'X-Master-Key':API_KEY, 'X-Bin-Meta':'false' } });
     if(!res.ok) throw new Error('bin missing');
-    const record = await res.json();
-    return record.record ?? record;
+    return await res.json(); // already record only due to X-Bin-Meta:false
   }catch(err){
     console.warn('Initial load failed, creating bin...', err.message);
     await saveData(defaultData); // will create if not existing
@@ -93,7 +103,7 @@ async function loadData(){
   }
 }
 async function saveData(newData){
-  Object.values(newData.accounts).forEach(acc=>{acc.transactions = acc.transactions.slice(0,20);});
+  Object.values(newData.accounts).forEach(acc=>{ acc.transactions = acc.transactions.slice(0,20); });
   const res = await fetch(BASE_URL,{
     method:'PUT',
     headers:{ 'Content-Type':'application/json', 'X-Master-Key':API_KEY },
@@ -110,12 +120,18 @@ async function saveData(newData){
 window.addEventListener('DOMContentLoaded', async ()=>{
   data = await loadData();
   populateChildSelect();
-  // enable quick-login buttons (they were active anyway but now safe)
   dataReadyResolve();
-  // Event listeners
+  attachEventListeners();
+  attemptAutoLogin();
+});
+
+function attachEventListeners(){
   document.getElementById('loginBtn').addEventListener('click', handleLoginClick);
   document.getElementById('giveBtn').addEventListener('click', handleGive);
-});
+  document.getElementById('logoutBtnParent').addEventListener('click', logout);
+  document.getElementById('logoutBtnChild').addEventListener('click', logout);
+  document.getElementById('switchBtn').addEventListener('click', handleChildSwitch);
+}
 
 function handleLoginClick(){
   const u = document.getElementById('username').value.trim().toLowerCase();
@@ -134,6 +150,7 @@ function authenticate(u,p){
   if(!data){ loginErr.textContent='Loading...'; return; }
   if(data.users[u] && data.users[u].password===p){
     currentUser=u;
+    localStorage.setItem(LAST_USER_KEY,currentUser);
     document.getElementById('login').classList.add('hidden');
     if(data.users[u].role==='parent') showParent(); else showChild();
   }else{
@@ -144,13 +161,31 @@ function authenticate(u,p){
 function populateChildSelect(){
   const sel = document.getElementById('childSelect');
   sel.innerHTML='';
-  for(const child of Object.keys(defaultData.accounts)){
+  for(const child of Object.keys(data.accounts)){
     const opt=document.createElement('option');
     opt.value=child; opt.textContent=child;
     sel.appendChild(opt);
   }
 }
+function populateSwitchChildSelect(){
+  const sel = document.getElementById('switchChildSelect');
+  sel.innerHTML='';
+  for(const child of Object.keys(data.accounts)){
+    const opt=document.createElement('option');
+    opt.value=child; opt.textContent=child;
+    if(child===currentUser) opt.selected=true;
+    sel.appendChild(opt);
+  }
+}
 
+function attemptAutoLogin(){
+  const last = localStorage.getItem(LAST_USER_KEY);
+  if(last && data.users[last]){
+    currentUser=last;
+    document.getElementById('login').classList.add('hidden');
+    if(data.users[last].role==='parent') showParent(); else showChild();
+  }
+}
 // ---- Parent view ---- //
 function showParent(){
   document.getElementById('parentPanel').classList.remove('hidden');
@@ -187,6 +222,7 @@ function renderParentBalances(){
 function showChild(){
   document.getElementById('childPanel').classList.remove('hidden');
   document.getElementById('childName').textContent=currentUser;
+  populateSwitchChildSelect();
   renderChild();
 }
 function renderChild(){
@@ -203,6 +239,18 @@ function renderChild(){
     list.appendChild(div);
   });
 }
-</script>
-</body>
-</html>
+function handleChildSwitch(){
+  const sel=document.getElementById('switchChildSelect');
+  const target=sel.value;
+  if(target===currentUser) return;
+  currentUser=target;
+  localStorage.setItem(LAST_USER_KEY,currentUser);
+  document.getElementById('childName').textContent=currentUser;
+  populateSwitchChildSelect();
+  renderChild();
+}
+
+// ---- Logout ---- //
+function logout(){
+  currentUser=null;
+  localStorage.removeItem(LAST

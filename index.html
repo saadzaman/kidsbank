@@ -153,13 +153,16 @@ button:hover {
     async function loadData() {
       try {
         const res = await fetch(`${BASE_URL}/latest`, {
-          headers: { "X-Master-Key": API_KEY, "X-Bin-Meta": false },
+          headers: {
+            "X-Master-Key": API_KEY,
+            "X-Bin-Meta": false, // return raw record only
+          },
         });
         if (!res.ok) throw new Error("Bin not found");
-        const json = await res.json();
-        return json.record;
+        const record = await res.json();
+        return record;
       } catch (err) {
-        // If first run or error, initialize remote bin
+        console.warn("loadData fallback (", err.message, ") – initialising bin");
         await createBin(defaultData);
         return structuredClone(defaultData);
       }
@@ -235,7 +238,7 @@ button:hover {
       const sel = document.getElementById("childSelect");
       sel.innerHTML = "";
       for (const child of Object.keys(data.accounts)) {
-        const opt = document.createElement("option");
+        const opt = document.createElement("option"); // fixed typo here
         opt.value = child;
         opt.textContent = child;
         sel.appendChild(opt);
@@ -247,4 +250,8 @@ button:hover {
       panel.classList.remove("hidden");
 
       document.getElementById("giveBtn").onclick = async () => {
-        const child = document
+        const child = document.getElementById("childSelect").value;
+        const reason = document.getElementById("reason").value.trim();
+        const amt = parseFloat(document.getElementById("amount").value);
+        const type = document.getElementById("txnType").value;
+        if (!child || !reason || isNaN

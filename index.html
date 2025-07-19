@@ -17,7 +17,6 @@ button:hover{opacity:.9}
 .txn:last-child{border-bottom:none}
 .quick-login{display:flex;justify-content:space-around;margin-top:1rem}
 .quick-login button{width:auto;padding:.5rem 1rem;color:#fff;border:none;border-radius:4px;font-weight:700}
-.quick-parent{background:#000}
 .quick-abdullah{background:#2196f3}
 .quick-musab{background:#4caf50}
 #childControls{display:flex;gap:.5rem;justify-content:center;margin-top:.5rem}
@@ -33,7 +32,7 @@ button:hover{opacity:.9}
   <button id="loginBtn">Login</button>
   <p id="loginErr" style="color:red"></p>
   <div class="quick-login">
-    <button class="quick-parent"   onclick="quickLogin('parent','admin')">Parent</button>
+    <!-- Parent quick-login removed as requested -->
     <button class="quick-abdullah" onclick="quickLogin('abdullah','1234')">Abdullah</button>
     <button class="quick-musab"    onclick="quickLogin('musab','1234')">Musab</button>
   </div>
@@ -95,10 +94,10 @@ async function loadData(){
   try{
     const res = await fetch(READ_URL,{ headers:{ 'X-Master-Key':API_KEY, 'X-Bin-Meta':'false' } });
     if(!res.ok) throw new Error('bin missing');
-    return await res.json(); // already record only due to X-Bin-Meta:false
+    return await res.json();
   }catch(err){
     console.warn('Initial load failed, creating bin...', err.message);
-    await saveData(defaultData); // will create if not existing
+    await saveData(defaultData);
     return structuredClone(defaultData);
   }
 }
@@ -138,12 +137,12 @@ function handleLoginClick(){
   const p = document.getElementById('password').value.trim();
   authenticate(u,p);
 }
-// Make quickLogin globally accessible
+
 async function quickLogin(u,p){
-  await dataReady; // ensure data loaded
+  await dataReady;
   authenticate(u,p);
 }
-window.quickLogin = quickLogin;
+window.quickLogin = quickLogin; // ensure global
 
 function authenticate(u,p){
   const loginErr = document.getElementById('loginErr');
@@ -160,6 +159,7 @@ function authenticate(u,p){
 
 function populateChildSelect(){
   const sel = document.getElementById('childSelect');
+  if(!sel) return;
   sel.innerHTML='';
   for(const child of Object.keys(data.accounts)){
     const opt=document.createElement('option');
@@ -169,6 +169,7 @@ function populateChildSelect(){
 }
 function populateSwitchChildSelect(){
   const sel = document.getElementById('switchChildSelect');
+  if(!sel) return;
   sel.innerHTML='';
   for(const child of Object.keys(data.accounts)){
     const opt=document.createElement('option');
@@ -189,68 +190,8 @@ function attemptAutoLogin(){
 // ---- Parent view ---- //
 function showParent(){
   document.getElementById('parentPanel').classList.remove('hidden');
+  document.getElementById('childPanel').classList.add('hidden');
   renderParentBalances();
 }
 async function handleGive(){
-  const child = document.getElementById('childSelect').value;
-  const reason= document.getElementById('reason').value.trim();
-  const amtVal = parseFloat(document.getElementById('amount').value);
-  const type   = document.getElementById('txnType').value;
-  if(!child||!reason||isNaN(amtVal)){ alert('Fill all fields'); return; }
-  const signedAmt = type==='debit' ? -amtVal : amtVal;
-  const acc = data.accounts[child];
-  acc.balance += signedAmt;
-  acc.transactions.unshift({ reason, amt:signedAmt, date: new Date().toLocaleString() });
-  await saveData(data);
-  document.getElementById('reason').value='';
-  document.getElementById('amount').value='';
-  renderParentBalances();
-  if(child===currentUser) renderChild();
-}
-function renderParentBalances(){
-  const container = document.getElementById('parentBalances');
-  container.innerHTML='<h3>Balances</h3>';
-  for(const [c,acc] of Object.entries(data.accounts)){
-    const div=document.createElement('div');
-    div.className='txn';
-    div.innerHTML=`<span>${c}</span><span>${acc.balance.toFixed(2)}</span>`;
-    container.appendChild(div);
-  }
-}
-
-// ---- Child view ---- //
-function showChild(){
-  document.getElementById('childPanel').classList.remove('hidden');
-  document.getElementById('childName').textContent=currentUser;
-  populateSwitchChildSelect();
-  renderChild();
-}
-function renderChild(){
-  const acc=data.accounts[currentUser];
-  document.getElementById('childBalance').textContent=acc.balance.toFixed(2);
-  const list=document.getElementById('childTxns');
-  list.innerHTML='';
-  if(acc.transactions.length===0){ list.textContent='No transactions yet.'; return; }
-  acc.transactions.forEach(t=>{
-    const div=document.createElement('div');
-    div.className='txn';
-    const sign=t.amt>=0 ? '+' : '-';
-    div.innerHTML=`<span>${t.date.split(',')[0]}</span><span>${t.reason}</span><span>${sign}${Math.abs(t.amt).toFixed(2)}</span>`;
-    list.appendChild(div);
-  });
-}
-function handleChildSwitch(){
-  const sel=document.getElementById('switchChildSelect');
-  const target=sel.value;
-  if(target===currentUser) return;
-  currentUser=target;
-  localStorage.setItem(LAST_USER_KEY,currentUser);
-  document.getElementById('childName').textContent=currentUser;
-  populateSwitchChildSelect();
-  renderChild();
-}
-
-// ---- Logout ---- //
-function logout(){
-  currentUser=null;
-  localStorage.removeItem(LAST
+  const child = document.get
